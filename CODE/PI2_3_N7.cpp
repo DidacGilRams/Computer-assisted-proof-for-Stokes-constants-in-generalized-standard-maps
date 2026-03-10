@@ -9,11 +9,12 @@ using namespace capd;
 using namespace capd::alglib;
 using namespace capd::matrixAlgorithms;
 
-//----------------------------------- Polynomial case with two monomials ----------------------------------------------------------
+//----------------------------------- Polynomial case with two monomials (Section 5.5.3) ----------------------------------------------------------
 
-//This code gives an interval for the Stokes constant p_2^{-1}(2,a) for degree d_{k_0}=2, d_{k_1}=3 and every value of a (coefficient of the second monomial to be introduced in the test()).
+//This code gives an interval for the Stokes constant p_2^{-1}(a_2) for degree d_{k_0}=2, d_{k_1}=3 and every value of a_2 (coefficient of the second monomial to be introduced in the Stokes()).
+//It uses a first approximation for phi_0 with 7 terms, that is, psi_0=psi_0^0+psi_0^1+psi_0^2+psi_0^3+psi_0^4+psi_0^5+psi_0^6+psi_0^7
 
-//<<<<<< Implementation of some functions used in the program >>>>>>
+//<<<<<< Implementation of some general functions used in the program >>>>>>
 
 interval angle(interval x,interval y)// Function that computes the angle on the plane
 {
@@ -175,18 +176,18 @@ IVector dcombine(IVector d,IVector psi,IVector dd,IVector dpsi)// Inverse of dsp
 	return x;
 }
 
-//<<<<<< Obtaining rho_0 for the existence of solutions of the inner equation (Section 3) >>>>>>
+//<<<<<< Obtaining rho_0 for the existence of solutions of the inner equation (Section 5.2) >>>>>>
 
 //Norms of the inverse operators
 
-int pNn(int N,int n)
+int pNn(int N,int n)//Definition of p_N^n
 {
 	interval x;
 	x=interval(N-n);
 	return floor(x)+1;
 }
 
-interval B(interval nu)//Defines the constants B(nu) from bounding the inverses S (Proposition 3.5)
+interval B(interval nu)//Defines the constants B(nu) used to bound the inverse S (Proposition 5.2.8)
 {
 	int n=floor(nu);
 	interval x,Pi=interval::pi();
@@ -200,7 +201,7 @@ interval B(interval nu)//Defines the constants B(nu) from bounding the inverses 
 	return x;
 }
 
-interval S(interval rho,interval gamma,interval nu)// Bound of the first order inverse operator in a domain with rho aplied to a nu Banach space (Proposition 3.5)
+interval S(interval rho,interval gamma,interval nu)// Bound of the first order inverse operator S(Proposition 5.2.8)
 {
 	interval s=interval(0.),k;
 	for(int i=1;i<=4;i++)
@@ -212,8 +213,8 @@ interval S(interval rho,interval gamma,interval nu)// Bound of the first order i
 	return (s/rho)+B(nu);
 }
 
-interval G(interval rho,interval gamma)// Bound of the second order inverse operator in a domain with rho aplied to a nu Banach space (Proposition 3.5)
-//Here for the polynomial case kappa=2./(dk0-1)=2 and since we took psi00+psi01+psi02+psi03+psi04 as approximation nu_N=10+nu_0
+interval G(interval rho,interval gamma)// Bound of the second order inverse operator G (Proposition 5.2.8)
+//Here for the polynomial case kappa=2./(dk0-1)=2 and nu_N=18
 {
 	interval x;
 	x=S(rho,gamma,interval(3)+4);
@@ -221,7 +222,7 @@ interval G(interval rho,interval gamma)// Bound of the second order inverse oper
 	return x;
 }
 
-//Here we define the coefficients b_i(d_{k_0}) for i={1,2,3,4} of the functions psi_0^i
+//Here we define the coefficients b_{j*d_{k_0}}(d_{k_0}) for j={1,2,3,4,5,6,7} of the functions psi_0^j
 
 interval b1(interval a2)//Coefficient of psi_0^1
 {
@@ -285,9 +286,8 @@ interval b7(interval a2)//Coefficient of psi_0^7
 
 //The following fuctions are used to compute the norm of the first iteration. 
 
-interval E0(IVector b,interval rho)//E0 for psi00+psi01+psi02+psi03+psi04+psi05 (Lemma 3.3)
+interval E0(IVector b,interval rho)//The sum of E_N^n for all 0<=n<=N (Lemma 5.2.2)
 {
-	//Basically we compute abs(bi)*abs(delta^2 [psi0i/bi]-2sum cancelled terms) for each.
 	interval psi00,psi01,psi02,psi03,psi04,psi05,psi06,psi07;
 	psi00=interval(1.)/power(rho-1.,2)+1./power(rho+interval(1.),2)-interval(2.)/power(rho,2);
 	psi00=psi00*power(rho,2+interval(16.));
@@ -348,7 +348,7 @@ interval E0(IVector b,interval rho)//E0 for psi00+psi01+psi02+psi03+psi04+psi05 
 	return psi00+psi01+psi02+psi03+psi04+psi05+psi06+psi07;
 }
 
-interval CN(IVector b,int a,interval rho)//Funtion C_N(a,rho)
+interval CN(IVector b,int a,interval rho)//Definition of C_N(a,rho) (see Lemma 5.2.4)
 {
 	interval c=interval(0.);
 	for(int n=1;n<=7;n++)
@@ -358,7 +358,7 @@ interval CN(IVector b,int a,interval rho)//Funtion C_N(a,rho)
 	return c;
 }
 
-interval f0(interval a2,IVector b,interval rho)//Computing the bound of the first iteration that comes from f - Taylor cancelled terms for psi00+psi01+psi02+psi03+psi04 (Lemma 3.4)
+interval f0(interval a2,IVector b,interval rho)//The sum of F_N^k (Lemma 5.2.5)
 {
 	interval x,y,psi00,psi01,psi02,psi03,psi04,psi05,psi06,psi07;
 	psi00=power(rho,-2);//Absolute values of psi0i evaluated at rho
@@ -378,14 +378,14 @@ interval f0(interval a2,IVector b,interval rho)//Computing the bound of the firs
 	return x*power(rho,interval(18.));
 }
 
-interval F0(interval a2,IVector b,interval rho,interval gamma)//Gives the first iteration bound (Corollary 3.6 and Lemma 3.8)
+interval F0(interval a2,IVector b,interval rho,interval gamma)//Computation of G*E_0^b (Corollaries 5.2.7 and 5.2.9)
 {
 	return G(rho,gamma)*(E0(b,rho)+f0(a2,b,rho));
 }
 
-//The following are used to compute the Lipschidz constant
+//The following are used to compute the Lipschidz constant (Lemma 5.2.11)
 
-interval A(interval a2,IVector b,interval rho)//Boundig the norm of the linear term A (Lemma 3.7)
+interval A(interval a2,IVector b,interval rho)//Boundig the norm of the linear term A (Lemma 5.2.10)
 {
 	interval c=interval(0.),psi;//Absolute values of psi0i evaluated at rho
 	psi=CN(b,0,rho);
@@ -395,7 +395,7 @@ interval A(interval a2,IVector b,interval rho)//Boundig the norm of the linear t
 	return abs(c);//multiplied by rho^2 from the inverse G
 }
 
-interval R(interval a2,IVector b,interval rho,interval M0)//Bounding higher order terms (Lemma 3.9)
+interval R(interval a2,IVector b,interval rho,interval M0)//Bounding higher order terms R^b (Lemma 5.2.11)
 {
 	interval c,psi;//Absolute values of psi0i evaluated at rho
 	psi=CN(b,0,rho);
@@ -409,17 +409,16 @@ interval M0(interval a2,IVector b,interval rho,interval gamma)//Function M_0(rho
 	return 2*F0(a2,b,rho,gamma);
 }
 
-interval Lip(interval a2,IVector b,interval rho,interval gamma)//Funtion that computes the Lipschidz constant for the existence (Lemma interval(3.)9)
+interval Lip(interval a2,IVector b,interval rho,interval gamma)//The Lipschidz constant for the existence (Lemma 5.2.11)
 {
 	return G(rho,gamma)*(A(a2,b,rho)+R(a2,b,rho,M0(a2,b,rho,gamma)));
 }
 
-
-//<<<<<< Obtaining rho_1 for the existence of zeta_1 and explicit formula for psi^u-psi^s (Section 4) >>>>>>
+//<<<<<< Obtaining rho_1 for the existence of zeta_1 and explicit formula for psi^u-psi^s (Section 5.3) >>>>>>
 
 //Norms of the inverse operators
 
-interval c(interval gamma)//Definition of c(gamma) involved in the domains (see definition of D_{rho,gamma}^delta)
+interval c(interval gamma)//Definition of c(gamma) involved in the domains (see definition of the domain  D_{rho,gamma}^delta)
 {
 	interval x;
 	x=power(gamma,2)+1;
@@ -428,7 +427,7 @@ interval c(interval gamma)//Definition of c(gamma) involved in the domains (see 
 	return x;
 }
 
-interval Sd(interval rho,interval gamma,interval nu)// Bound of the first order inverse operator in a c-ascending domain aplied to a nu Banach space (Proposition interval(4.)3)
+interval Sd(interval rho,interval gamma,interval nu)// Bound of the first order inverse operator S^d  (Proposition 5.3.2)
 {
 	interval s,r,x1,x2,Pi=interval::pi();
 	r=rho+(interval(3.)*gamma)/interval(2.);
@@ -470,11 +469,11 @@ interval Sd(interval rho,interval gamma,interval nu)// Bound of the first order 
 
 //In order to define the bound for the last inverse, we need to define the the following two bounds related to eta_1^d and eta_2^d
 
-interval eta1(interval a2,IVector b,interval rho,interval gamma) // Lemma interval(4.)2
+interval eta1(interval a2,IVector b,interval rho,interval gamma)//Computation of eta_1^b (Lemma 5.3.3)
 {
 	interval r,x;
 	r=(rho+interval(3.)*gamma/interval(2.));
-	x=interval(2.);//Absolute values of the derivatives of psi0i evaluated at rho
+	x=interval(2.);
 	for(int n=1;n<=7;n++)
 	{
 		x=x+2*(n+1)*abs(b[n-1])*power(rho,-2*n);//Absolute values of dpsi_0^n evaluated at rho
@@ -483,7 +482,7 @@ interval eta1(interval a2,IVector b,interval rho,interval gamma) // Lemma interv
 	return x+(3*M0(a2,b,rho+gamma/2,gamma))/(power(r,16));
 }
 
-interval eta2(interval a2,IVector b,interval rho,interval gamma)//Corollary interval(4.)4
+interval eta2(interval a2,IVector b,interval rho,interval gamma)//Computation of eta_2^b (Corollary 5.3.6)
 {
 	interval r,x,eta,nu0=interval(2.);
 	r=rho+3*gamma/2;
@@ -493,13 +492,13 @@ interval eta2(interval a2,IVector b,interval rho,interval gamma)//Corollary inte
 	return x;
 }
 
-interval Gd(interval a2,IVector b,interval rho,interval gamma)// Bound of the second order inverse operator in a domain with rho aplied to a nu Banach space (Corollary 4.5)
-//Here for the polynomial case kappa=2 and since we took psi00+psi01+psi02+psi03+psi04+psi05 as approximation nu=12
+interval Gd(interval a2,IVector b,interval rho,interval gamma)// Bound of the second order inverse operator G^d (Corollary 5.3.7)
+//Here for the polynomial case kappa=2 and nuN=18
 {
 	return eta1(a2,b,rho,gamma)*eta2(a2,b,rho,gamma)*(Sd(rho,gamma,interval(16))+Sd(rho,gamma,interval(23)));
 }
 
-interval Ad(interval a2,IVector b,interval rho, interval gamma)//Funtion involved in the bound for the linear operator A^d (Lemma 4.1)
+interval Ad(interval a2,IVector b,interval rho, interval gamma)//Computation of A^{d,b} (Lemma 5.3.1)
 {
 	interval c,r,M;
 	r=rho+interval(3.)*gamma/interval(2.);
@@ -508,21 +507,21 @@ interval Ad(interval a2,IVector b,interval rho, interval gamma)//Funtion involve
 	return c;
 }
 
-interval Lipd(interval a2,IVector b,interval rho,interval gamma)//Bound for the operator G^d[A^d*] (Lemma interval(4.)6)
+interval Lipd(interval a2,IVector b,interval rho,interval gamma)//Bound for the operator G^d[A^d*] (Lemma 5.3.8)
 {
 	return Gd(a2,b,rho,gamma)*Ad(a2,b,rho,gamma)*power(rho+interval(3.)*gamma/interval(2.),-16);
 }
 
-interval zeta11(interval a2,IVector b,interval rho,interval gamma)//Bound for zeta_1^1 (Lemma interval(4.)6)
+interval zeta11(interval a2,IVector b,interval rho,interval gamma)//Computation of zeta_1^{1,b} (Lemma 5.3.8)
 {
 	return (eta1(a2,b,rho,gamma)*Gd(a2,b,rho,gamma)*Ad(a2,b,rho,gamma))/(1-Lipd(a2,b,rho,gamma));
 }
 
-//<<<<<< Rigorous computations of psi^u-psi^s and dpsi^s (Section 5) >>>>>>
+//<<<<<< Rigorous computations of psi^u-psi^s and dpsi^s (Section 5.4) >>>>>>
 
 //Initial aproximation of the manifold and its derivative
 
-IVector psi0(IVector b,IVector z)// psi0=psi00+psi01+psi02+psi03+psi04
+IVector psi0(IVector b,IVector z)//Computation of psi_0=psi_0^0+psi_0^1+psi_0^2+psi_0^3+psi_0^4+psi_0^5+psi_0^6+psi_0^7
 {
 	IVector x(2);
 	x=power(z,-interval(2.));
@@ -533,7 +532,7 @@ IVector psi0(IVector b,IVector z)// psi0=psi00+psi01+psi02+psi03+psi04
 	return x;
 }
 
-IVector psi0(IVector b,interval re,interval im)// psi0=psi00+psi01+psi02+psi03+psi04
+IVector psi0(IVector b,interval re,interval im)//Computation of psi0(re,im)
 {
 	IVector z(2);
 	z[0]=re;
@@ -541,7 +540,7 @@ IVector psi0(IVector b,interval re,interval im)// psi0=psi00+psi01+psi02+psi03+p
 	return psi0(b,z);
 }
 
-IVector dpsi0(IVector b,IVector z)// Derivative of psi0=psi00+psi01+psi02+psi03+psi04
+IVector dpsi0(IVector b,IVector z)//Derivative of psi_0=psi_0^0+psi_0^1+psi_0^2+psi_0^3+psi_0^4+psi_0^5+psi_0^6+psi_0^7
 {
 	IVector x(2);
 	x=-2*power(z,-1-2);
@@ -552,7 +551,7 @@ IVector dpsi0(IVector b,IVector z)// Derivative of psi0=psi00+psi01+psi02+psi03+
 	return x;
 }
 
-IVector dpsi0(IVector b,interval re,interval im)// Derivative of psi0=psi00+psi01+psi02+psi03+psi04
+IVector dpsi0(IVector b,interval re,interval im)// Derivative of psi_0(re,im)
 {
 	IVector z(2);
 	z[0]=interval(re);
@@ -560,11 +559,11 @@ IVector dpsi0(IVector b,interval re,interval im)// Derivative of psi0=psi00+psi0
 	return dpsi0(b,z);
 }
 
-//<<<<<< Iterative methods for psi^u, psi^s (Section 5.1) and derivative psi^s (Section 5.2) >>>>>>
+//<<<<<< Iterative methods for psi^u, psi^s (Section 5.5.1) and derivative psi^s (Section 5.5.2) >>>>>>
 
-//The following functions are defined to obtain the generating functions F and dF for the iterative methods in Section 5
+//The following functions are defined to obtain the generating functions F and dF for the iterative methods
 
-IVector T0(IVector b,IVector z)//T0 for psi00+psi01+psi02+psi03+psi04 at point z (Lemma 5.1)
+IVector T0(IVector b,IVector z)//T_0^Omega(z) for psi00+psi01+psi02+psi03+psi04+psi05+psi06+psi07 (Lemma 5.4.4)
 {
 	int Omega=20;
 	interval nu0=interval(2.);
@@ -620,7 +619,7 @@ IVector T0(IVector b,IVector z)//T0 for psi00+psi01+psi02+psi03+psi04 at point z
 	return -2*(psi00+psi01+psi02+psi03+psi04+psi05+psi06+psi07);
 }
 
-IVector T0b(IVector b,IVector z)//Rest from T0 for psi00+psi01+psi02+psi03+psi04+psi05+psi06+psi07 at point z. (Lemma 5.1 and using Lemma 3.3)
+IVector T0b(IVector b,IVector z)///Sum of T_0^{n,b}(z) (Lemma 5.4.4 and Remark 5.4.5)
 {
 	int Omega=20;
 	interval psi00,psi01,psi02,psi03,psi04,psi05,psi06,psi07,c,nu0=interval(2.);
@@ -639,7 +638,7 @@ IVector T0b(IVector b,IVector z)//Rest from T0 for psi00+psi01+psi02+psi03+psi04
 	return x;
 }
 
-IVector T1(interval a2,IVector b,IVector psi,IVector z)//Taylor for psi00+psi01+psi02+psi03+psi04+psi05+psi06+psi07 at point z (Lemma 5.1)
+IVector T1(interval a2,IVector b,IVector psi,IVector z)//T_1^Omega for psi00+psi01+psi02+psi03+psi04+psi05 at point z (Lemma 5.4.4)
 {
 	IVector x(2),y(2),psi00(2),psi01(2),psi02(2),psi03(2),psi04(2),psi05(2),psi06(2),psi07(2);
 	psi00=power(z,-2);
@@ -659,20 +658,20 @@ IVector T1(interval a2,IVector b,IVector psi,IVector z)//Taylor for psi00+psi01+
 	return x;
 }
 
-IVector F(interval a2,IVector b,IVector psi,IVector z)// Funtion involved in inner equation used to compute Wu and Ws (see Section 5.1.2)
+IVector F(interval a2,IVector b,IVector psi,IVector z)//Right hand side of the iterative method for psi_1^u and psi_1^s
 {
 	return T0(b,z)+T1(a2,b,psi,z)+T0b(b,z);
 }
 
-IVector dF(interval a2,IVector b,IVector psi,IVector z)// Funtion involved in inner equation used to compute Wu and Ws (see Section 5.2)
+IVector dF(interval a2,IVector b,IVector psi,IVector z)//Right hand side of the iterative method for the derivative of psi_1^s
 {
 	IVector Psi0=psi0(b,z);
 	return interval(12.)*(Psi0+psi)+interval(3.)*a2*power(Psi0+psi,2);
 }
 
-// I treat Fu and Fs separately only for the sake of documentation. The function is the same, but the justification of the formulae is written out differently.
+// We treat Fu and Fs separately only for the sake of documentation. The function is the same, but the justification of the formulae is written out differently.
 
-IVector Fu(interval a2,IVector b,IVector x,IVector z)//Iterative function unstable
+IVector Fu(interval a2,IVector b,IVector x,IVector z)//Iterative function for psi_1^u
 {
 	// below the convention is
 	// d=d(n)=psi(n)-psi(n-1)
@@ -688,7 +687,7 @@ IVector Fu(interval a2,IVector b,IVector x,IVector z)//Iterative function unstab
 	return combine(d,psi);
 }
 
-IVector Fs(interval a2,IVector b,IVector x,IVector z)//Iterative function stable
+IVector Fs(interval a2,IVector b,IVector x,IVector z)//Iterative function for psi_1^s
 {
 	// below the convention is:
 	// d=d(n)=psi(n)-psi(n+1)
@@ -704,7 +703,7 @@ IVector Fs(interval a2,IVector b,IVector x,IVector z)//Iterative function stable
 	return combine(d,psi);
 }
 
-IVector dFs(interval a2,IVector b,IVector dx,IVector z)//Iterative function derivative stable
+IVector dFs(interval a2,IVector b,IVector dx,IVector z)//Iterative function for the derivative of psi_1^s
 {
 	// below the convention is:
 	// d=d(n)=psi(n)-psi(n+1)
@@ -724,9 +723,9 @@ IVector dFs(interval a2,IVector b,IVector dx,IVector z)//Iterative function deri
 	return dcombine(d,psi,dd,dpsi);
 }
 
-//Initial conditions for the iterative methods (Sections interval(5.)1 and interval(5.)2)
+//Initial conditions for the iterative methods
 
-IVector psi10(interval a2,IVector b,interval n,interval rho,interval gamma)//Initial condition for psi1 contain the error given by the theorem of existence, the M0 is the bound given by the first iteration and the space is nu_N=10
+IVector psi10(interval a2,IVector b,interval n,interval rho,interval gamma)//Initial condition for psi_1^{u,s} (using Proposition 5.1.2)
 {
 	interval varrho=rho+2*gamma;
 	IVector z({n,-varrho}),psi10(2);
@@ -755,12 +754,12 @@ IVector x0_s(interval a2,IVector b,interval n,interval rho,interval gamma)// Ini
 	return combine(d0_s(a2,b,n,rho,gamma),psi10(a2,b,n,rho,gamma));
 }
 
-IVector dpsi10(interval a2,IVector b,interval n,interval rho,interval gamma)//Initial condition for derivative psi1 contain the error given by the theorem of existence, the space is (10+nu_0)
+IVector dpsi10(interval a2,IVector b,interval n,interval rho,interval gamma)//Initial condition for the derivative of psi_1^s (see Remark 5.3.4)
 {
 	interval M1,nu0=interval(2.),varrho=rho+2*gamma;
 	IVector z({n,-varrho}),dpsi10(2);
 	M1=2*M0(a2,b,rho,gamma)/c(gamma);
-	M1=M1+((16+nu0)*M0(a2,b,rho+gamma/2,gamma))/(rho+interval(3.)*gamma/interval(2.));//Here we use that we are computing the derivative at im z= -(rho+2gamma)
+	M1=M1+((16+nu0)*M0(a2,b,rho+gamma/2,gamma))/(rho+interval(3.)*gamma/interval(2.));//Here we use that we are computing the derivative at im z= -i(rho+2gamma)
 	M1=M1/(power(mod(z),16+nu0));
 	dpsi10[0]=interval(-1.,1.)*M1;
 	dpsi10[1]=dpsi10[0];
@@ -779,7 +778,7 @@ IVector dx0_s(interval a2,IVector b,interval n,interval rho,interval gamma)// In
 
 //Definition of the iterative methods
 
-IVector Wu(interval a2,IVector b,interval re,int L,interval rho,interval gamma)// Psi1 unstable at points re-1-irho and re-irho interated from -L
+IVector Wu(interval a2,IVector b,interval re,int L,interval rho,interval gamma)// psi_1^u at re-1-ivarrho and re-ivarrho interated from -L
 {
 	interval varrho=-rho-2*gamma;//Height where to compute the difference (where we have defined the interval re(z) in [0,1])
 	IVector z(2),x=x0_u(a2,b,interval(-L+re),rho,gamma),psi1(2),psi2(2),d(2);
@@ -797,7 +796,7 @@ IVector Wu(interval a2,IVector b,interval re,int L,interval rho,interval gamma)/
 	return x;
 }
 
-IVector dWs(interval a2,IVector b,interval re,int L,interval rho,interval gamma)// psi1, dpsi1 stable at points re-irho and re+1-irho interated from L
+IVector dWs(interval a2,IVector b,interval re,int L,interval rho,interval gamma)// psi_1^s and its derivative at re-ivarrho and re+1-ivarrho interated from L
 {
 	interval varrho=-rho-2*gamma;//Height where to compute the difference (where we have defined the interval re(z) in [0,1])
 	IVector z(2),x=dx0_s(a2,b,interval(L+re),rho,gamma),psi1(2),psi2(2),d(2),dpsi1(2),dpsi2(2),dd(2);
@@ -815,9 +814,9 @@ IVector dWs(interval a2,IVector b,interval re,int L,interval rho,interval gamma)
 	return x;
 }
 
-//<<<<<< Definition of the Simpson sum and its error (Section interval(2.)2) >>>>>>
+//<<<<<< Definition of the Simpson sum and its error (Section 5.1.2) >>>>>>
 
-IVector SSum(interval a2,IVector b,int L,interval rho,interval gamma,int P)// Simpson sum of p2(z)*e^(2pi*z) between -irho and 1-irho
+IVector SSum(interval a2,IVector b,int L,interval rho,interval gamma,int P)// Simpson sum of p2(z)*e^(2pi*z) between -ivarrho and 1-ivarrho 
 {
 	interval s,varrho,nu0=interval(2.);
 	IVector err(2),SS(2),x(4),y(2),dx(8),d(2),dd(2),psi1sL(2),psi1uL(2),psi1sR(2),psi1uR(2),dpsisL(2),dpsisR(2),z(2),deltaL(2),deltaR(2);
@@ -827,9 +826,9 @@ IVector SSum(interval a2,IVector b,int L,interval rho,interval gamma,int P)// Si
 	for(int i=0;i<P+1;i++)
 	{
 		s=interval(i)/interval(P);
-		x=Wu(a2,b,s,L,rho,gamma);//Computing psi_1^u at -irho+s-1 and -irho+s
+		x=Wu(a2,b,s,L,rho,gamma);//Computing psi_1^u at -ivarrho+s-1 and -ivarrho+s
 		split(x,psi1uL,psi1uR);
-		dx=dWs(a2,b,s-1,L,rho,gamma);//Computing psi_1^s and dpsi^s at -irho+s-1 and -irho+s
+		dx=dWs(a2,b,s-1,L,rho,gamma);//Computing psi_1^s and its derivative at -ivarrho+s-1 and -ivarrho+s
 		dsplit(dx,psi1sR,psi1sL,dpsisR,dpsisL);
 		deltaL=psi1uL-psi1sL;
 		deltaR=psi1uR-psi1sR;
@@ -860,7 +859,7 @@ IVector SSum(interval a2,IVector b,int L,interval rho,interval gamma,int P)// Si
 	return SS;
 }
 
-interval ESS(interval a2,IVector b,interval rho,interval gamma,int P)//Error for the Simpson sum (Lemma 2.3)
+interval ESS(interval a2,IVector b,interval rho,interval gamma,int P)//Error for the Simpson sum (Lemma 5.1.6)
 {
 	interval r,a,x,y,nu0=interval(2.);
 	a=c(gamma);
@@ -879,15 +878,18 @@ interval ESS(interval a2,IVector b,interval rho,interval gamma,int P)//Error for
 
 //<<<<<< Computer assited proof >>>>>>
 
-// Remark 1: The method is really slow if m increases since it has to compute two times de difference for each step (see function SSum). My recomendation is to check 
-//           first the sum with m small (say 10) and see that we obtain a good interval for the L chosen (observe that increasing the L also makes the process slower).
-//           Then, once we obtain a good interval, repite the process including the error with a good m for the error 
-// Remark 2: Observe that the imaginary part where we compute the distance is -(rho+2gamma), this means that the error ESS improves when gamma grows but
-//			 on the other hand, the interval for the Simpson sum gets bigger since we are computing it at imaginary part bigger (here the difficulties with the number of digids). 
-// Summarising: If we don't care about the time, take gamma as small and L, rho as big as wished to get a good Simpson sum and m as big as needed to have a good
-// 				controll of the error. Observe that rho cannot be too big since then, we cannot compute the difference.
+// Remark 1: The method is really slow if P increases since it has to compute two times de difference for each step (see function SSum). My recomendation is to check 
+//           first the sum with P small (say 10) and see that we obtain a good interval for the parameters chosen (observe that increasing the L also makes the process slower).
+//           Then, once we obtain a good interval, repite the process including the error ESS with a good P for it  
+// Remark 2: Observe that increasing L we start getting worst intervals, this is due to the number of computations and the accumulated error.
+// Remark 3: There is an optimal rho that gives better (smaller) intervals as a result and it is not always the smaller or the bigger since
+//           in both cases (increasing or decreasing it) we can create a different kind of error. On one side, if we decrease rho,
+//           the error comming from zeta_1^{1,b} in the SSum increase. On the other side, increasing rho the number of correct digids in the 
+//           computation of delta decrease.
+// Summary:  It is recomended to play with the parameters in order to get a better knowledge of their behaviour and implrove the obtained results
+//           The results given in the thesis are NOT optimal and CAN be improved.
 
-void test()//Computer assisted proof for the Stokes constant p_2^{-1}(a_2)
+void Stokes()//Computer assisted proof for the Stokes constant p_2^{-1}(a_2)
 {
 	int P=10000,L=200;
 	interval rho=interval(9.155),gamma=interval(0.949327);
@@ -906,24 +908,24 @@ void test()//Computer assisted proof for the Stokes constant p_2^{-1}(a_2)
 	cout << "L = " << L << endl;
 	cout << "rho = " << rho << endl;
 	cout << "varrho = " << rho+2*gamma << endl;
-	cout << "Lipschidz =" << Lip(a2,b,rho,gamma) << " <=interval(0.5) " << endl;//It has to be less than interval(0.5) to have existence of psi_interval(1.) (see Section interval(3.)3)
+	cout << "Lipschidz =" << Lip(a2,b,rho,gamma) << " <=interval(0.5) " << endl;//It has to be less than 1/2 to have existence of psi_1 (see Section 5.2.3)
 	cout << "gamma = " << gamma << endl;
-	cout << "c(gamma) =" << c(gamma) << " <=0.688493 " << endl;//Condition on gamma (see Proposition interval(4.)3). gamma=0.945 close to the optimal 
-	cout << "Lipschidz^d =" << Lipd(a2,b,rho,gamma) << " < 1 " << endl;//It has to be less than 1 to have existence of zeta_1 (see proof of Lemma interval(4.)6). 
-	SS=exp(interval(2.)*interval::pi()*varrho)*SSum(a2,b,L,rho,gamma,P);//Simpson sum without error. Here is where we increase the rho to obtain an smaller interval. 
+	cout << "c(gamma) =" << c(gamma) << " <=0.688493 " << endl;//Condition on gamma (see Proposition 5.3.2).
+	cout << "Lipschidz^d =" << Lipd(a2,b,rho,gamma) << " < 1 " << endl;//It has to be less than 1 to have existence of zeta_1 (see proof of Lemma 5.3.8). 
+	SS=exp(interval(2.)*interval::pi()*varrho)*SSum(a2,b,L,rho,gamma,P);//Simpson sum without error.  
 	cout << "Simpson sum  = (" << SS <<")" << endl;
-	err=exp(interval(2.)*interval::pi()*varrho)*ESS(a2,b,rho,gamma,P);//Error Simpson sum. Here we see which m do we need.
+	err=exp(interval(2.)*interval::pi()*varrho)*ESS(a2,b,rho,gamma,P);//Error Simpson sum. Here we see which P we need.
 	cout << "ESS " << err << endl;
 	SS[0]=SS[0]+err*interval(-1.,1.);
 	SS[1]=SS[1]+err*interval(-1.,1.);
 	cout << "p_2^-1 = " << SS << endl;//Stokes constant
-	cout << "Splitting constant = " << power(interval(6.)/abs(fk0),2)*SS << endl; // Here we use the formula given in Theorem interval(2.)interval(4.)
+	cout << "Splitting constant = " << power(interval(6.)/abs(fk0),2)*SS << endl;// Here we use Definition 1.2.13
 }
 
-void Lipschidz()//This test can be used to find the minimal rho_0 (Proposition 2.1)
+void Lipschidz()//This test can be used to find the minimal rho_0(d_{k_0}) (Section 5.2.3)
 {
 	interval a2=interval(3.);
-	interval rho=interval(8.7),gamma=gamma=interval(0.949327);//rho=9.152 for a_2=6 and rho=8.141 for a_2=0
+	interval rho=interval(8.7),gamma=gamma=interval(0.949327);
 	IVector b(7);
 	b[0]=b1(a2);
 	b[1]=b2(a2);
@@ -947,7 +949,8 @@ int main()
 	{
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		start = std::chrono::system_clock::now();
-		Lipschidz();
+		//Lipschidz();
+		Stokes();
 		end = std::chrono::system_clock::now();
 		std::chrono::duration<double> elapsed_seconds = end - start;
 		std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";

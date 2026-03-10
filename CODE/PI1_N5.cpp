@@ -11,9 +11,10 @@ using namespace capd::matrixAlgorithms;
 
 //----------------------------------- Polynomial case with one monomial (Section 5.5.2)----------------------------------------------------------
 
-//This code provides an interval for the Stokes constant p_2^{-1}(d_{k_0}) for every degree d_{k_0} (has to be introduced in the test() function).
+//This code provides an interval for the Stokes constant p_2^{-1}(d_{k_0}) for every degree d_{k_0} (has to be introduced in the Stokes() function).
+//This version uses a first approximation for phi_0 with 5 terms, that is, psi_0=psi_0^0+psi_0^1+psi_0^2+psi_0^3+psi_0^4+psi_0^5
 
-//<<<<<< Implementation of some functions used in the program >>>>>>
+//<<<<<< Implementation of some general functions used in the program >>>>>>
 
 interval angle(interval x,interval y)// Function that computes the angle on the plane
 {
@@ -191,7 +192,6 @@ int pNn(int dk0,int N,int n)//Definition of p_N^n
 	return floor(x)+1;
 }
 
-
 interval B(interval nu)//Defines the constants B(nu) used to bound the inverse S (Proposition 5.2.8)
 {
 	int n=floor(nu);
@@ -227,7 +227,7 @@ interval G(int dk0,interval rho,interval gamma)// Bound of the second order inve
 	return x;
 }
 
-//Here we define the coefficients b_{id_{k_0}}(d_{k_0}) for i={1,2,3,4,5} of the functions psi_0^i
+//Here we define the coefficients b_{j*d_{k_0}}(d_{k_0}) for j={1,2,3,4,5} of the functions psi_0^j
 
 interval b1(int dk0)//Coefficient of psi_0^1
 {
@@ -382,7 +382,7 @@ interval F0(int dk0,IVector b,interval rho,interval gamma)//Computation of G*E_0
 	return G(dk0,rho,gamma)*(E0(dk0,b,rho)+f0(dk0,b,rho));
 }
 
-//The following are used to compute the Lipschidz constant
+//The following are used to compute the Lipschidz constant (Lemma 5.2.11)
 
 interval A(int dk0,IVector b,interval rho)//Boundig the norm of the linear term A (Lemma 5.2.10)
 {
@@ -409,7 +409,7 @@ interval M0(int dk0,IVector b,interval rho,interval gamma)//Function M_0(rho,gam
 	return 2*F0(dk0,b,rho,gamma);
 }
 
-interval Lip(int dk0,IVector b,interval rho,interval gamma)//The Lipschidz constant for the existence (Lemma (Lemma 5.2.11))
+interval Lip(int dk0,IVector b,interval rho,interval gamma)//The Lipschidz constant for the existence (Lemma 5.2.11)
 {
 	return G(dk0,rho,gamma)*(A(dk0,b,rho)+R(dk0,b,rho,M0(dk0,b,rho,gamma)));
 }
@@ -418,7 +418,7 @@ interval Lip(int dk0,IVector b,interval rho,interval gamma)//The Lipschidz const
 
 //Norms of the inverse operators
 
-interval c(interval gamma)//Definition of c(gamma) involved in the domains (see definition of D_{rho,gamma}^delta)
+interval c(interval gamma)//Definition of c(gamma) involved in the domains (see definition of the domain  D_{rho,gamma}^delta)
 {
 	interval x;
 	x=power(gamma,2)+1;
@@ -624,7 +624,7 @@ IVector T0b(int dk0,IVector b,IVector z)//Sum of T_0^{n,b}(z) (Lemma 5.4.4 and R
 	return x;
 }
 
-IVector T1(int dk0,IVector b,IVector psi,IVector z)//T_1^Omega for psi00+psi01+psi02+psi03+psi04 at point z (Lemma 5.4.4)
+IVector T1(int dk0,IVector b,IVector psi,IVector z)//T_1^Omega for psi00+psi01+psi02+psi03+psi04+psi05 at point z (Lemma 5.4.4)
 {
 	interval nu0=nu_0(dk0);
 	IVector x(2),y(2),psi00(2),psi01(2),psi02(2),psi03(2),psi04(2),psi05(2);
@@ -661,7 +661,7 @@ IVector dF(int dk0,IVector b,IVector psi,IVector z)//Right hand side of the iter
 	return (nu0+interval(1.))*(nu0+interval(2.))*power(psi0(dk0,b,z)+psi,dk0-1);
 }
 
-// I treat Fu and Fs separately only for the sake of documentation. The function is the same, but the justification of the formulae is written out differently.
+// We treat Fu and Fs separately only for the sake of documentation. The function is the same, but the justification of the formulae is written out differently.
 
 IVector Fu(int dk0,IVector b,IVector x,IVector z)//Iterative function for psi_1^u
 {
@@ -751,7 +751,7 @@ IVector dpsi10(int dk0,IVector b,interval n,interval rho,interval gamma)//Initia
 	interval M1,nu0=nu_0(dk0),varrho=rho+2*gamma;
 	IVector z({n,-varrho}),dpsi10(2);
 	M1=2*M0(dk0,b,rho,gamma)/c(gamma);
-	M1=M1+((12+nu0)*M0(dk0,b,rho+gamma/2,gamma))/(rho+interval(3.)*gamma/interval(2.));//Here we use that we are computing the derivative at im z= -(rho+2gamma)
+	M1=M1+((12+nu0)*M0(dk0,b,rho+gamma/2,gamma))/(rho+interval(3.)*gamma/interval(2.));//Here we use that we are computing the derivative at im z= -i(rho+2gamma)
 	M1=M1/(power(mod(z),12+nu0));
 	dpsi10[0]=interval(-1.,1.)*M1;
 	dpsi10[1]=dpsi10[0];
@@ -881,10 +881,10 @@ interval ESS(int dk0,IVector b,interval rho,interval gamma,int P)//Error for the
 // Summary:  It is recomended to play with the parameters in order to get a better knowledge of their behaviour and implrove the obtained results
 //           The results given in the thesis are NOT optimal and CAN be improved.
  
-void test()//Computer assisted proof for the Stokes constant p_2^{-1}(d_{k_0})
+void Stokes()//Computer assisted proof for the Stokes constant p_2^{-1}(d_{k_0})
 {
-	int dk0=99,P=1000,L=200;
-	interval rho=interval(4.3),gamma=interval(0.949327);//rho=8.171 for d_{k_0}=2
+	int dk0=2,P=10000,L=500;
+	interval rho=interval(8.171),gamma=interval(0.949327);
 	interval nu0=nu_0(dk0),fk0=interval(1.),err,varrho=rho+2*gamma;
 	IVector b(5),SS(2),b0(2);
 	b[0]=b1(dk0);
@@ -904,7 +904,7 @@ void test()//Computer assisted proof for the Stokes constant p_2^{-1}(d_{k_0})
 	cout << "Lipschidz^d =" << Lipd(dk0,b,rho,gamma) << " < 1 " << endl;//It has to be less than 1 to have existence of zeta_1 (see proof of Lemma 5.3.8). 
 	SS=exp(interval(2.)*interval::pi()*varrho)*SSum(dk0,b,L,rho,gamma,P);//Simpson sum without error. 
 	cout << "Simpson sum  = (" << SS <<")" << endl;
-	err=exp(interval(2.)*interval::pi()*varrho)*ESS(dk0,b,rho,gamma,1000);//Error Simpson sum. Here we see which P do we need.
+	err=exp(interval(2.)*interval::pi()*varrho)*ESS(dk0,b,rho,gamma,P);//Error Simpson sum. Here we see which P we need.
 	cout << "ESS " << err << endl;
 	SS[0]=SS[0]+err*interval(-1.,1.);
 	SS[1]=SS[1]+err*interval(-1.,1.);
@@ -915,75 +915,10 @@ void test()//Computer assisted proof for the Stokes constant p_2^{-1}(d_{k_0})
 	cout << "Splitting constant = " << cprod(b0,SS) << endl;  
 }
 
-void test1()//Loop for lower bounds of splitting constants 
-{
-	int dk0=100,P=1000,L=200;
-	interval rho=interval(4.3),gamma=interval(0.949327);
-	interval nu0,fk0=interval(1.),err,varrho=rho+2*gamma;
-	IVector b(5),SS(2),b0(2);
-	for (int i=0;i<=150;i++)
-	{
-		nu0=nu_0(dk0);
-		b[0]=b1(dk0);
-		b[1]=b2(dk0);
-		b[2]=b3(dk0);
-		b[3]=b4(dk0);
-		b[4]=b5(dk0);
-		SS=exp(interval(2.)*interval::pi()*varrho)*SSum(dk0,b,L,rho,gamma,P); 
-		err=exp(interval(2.)*interval::pi()*varrho)*ESS(dk0,b,rho,gamma,P);
-		SS[0]=SS[0]+err*interval(-1.,1.);
-		SS[1]=SS[1]+err*interval(-1.,1.);
-		b0[0]=0;
-		b0[1]=(interval(2.)*interval::pi()*(dk0-interval(2.)))/(dk0-interval(1.));
-		b0=power((nu0*(nu0+1))/abs(fk0),nu0)*exp(b0);
-		b0=cprod(b0,SS);
-		cout << "[" << dk0 << "," << leftBound(b0[1]) << "]," << endl;
-		dk0=dk0+1;
-	}
-}
-
-void test2()//Computing the convergence of the exponent 
-{
-	int dk0=750,P=10,L=200;
-	interval gamma=interval(0.949327),rho=4.25;
-	interval nu0=interval(2.)/(dk0-interval(1.)),fk0=interval(interval(1.)),x,x1,y;
-	IVector b(5),SS(2),b0(2);
-	b[0]=b1(dk0);
-	b[1]=b2(dk0);
-	b[2]=b3(dk0);
-	b[3]=b4(dk0);
-	b[4]=b5(dk0);
-	SS=SSum(dk0,b,L,rho,gamma,P);//Simpson sum without error since we are looking for the mid point of the interval 
-	b0[0]=0;
-	b0[1]=(interval(2.)*interval::pi()*(dk0-interval(2.)))/(dk0-interval(1.));
-	b0=exp(b0);
-	SS=cprod(b0,SS);
-	x=log(SS[1]);
-	for (int i=0;i<=200;i++)
-	{
-		dk0=dk0+1;
-		b[0]=b1(dk0);
-		b[1]=b2(dk0);
-		b[2]=b3(dk0);
-		b[3]=b4(dk0);
-		b[4]=b5(dk0);
-		SS=SSum(dk0,b,L,rho,gamma,P); 
-		b0[0]=0;
-		b0[1]=(interval(2.)*interval::pi()*(dk0-interval(2.)))/(dk0-interval(1.));
-		b0=exp(b0);
-		SS=cprod(b0,SS);
-		x1=log(SS[1]);
-		y=(x1-x)/(log(dk0-1)-log(dk0-2));
-		y=mid(y);
-		cout << "[" << dk0 << "," << leftBound(y) << "]," << endl;
-		x=x1;
-	}
-}
-
 void Lipschidz()//This test can be used to find the minimal rho_0(d_{k_0}) (Section 5.2.3)
 {
 	int dk0=963;
-	interval rho=interval(3.02),gamma=interval(0.949327);//dk0=2 rho=8.171
+	interval rho=interval(3.012),gamma=interval(0.949327);
 	IVector b(5);
 	b[0]=b1(dk0);
 	b[1]=b2(dk0);
@@ -1005,8 +940,8 @@ int main()
 	{
 		std::chrono::time_point<std::chrono::system_clock> start, end;
 		start = std::chrono::system_clock::now();
-		test1();
 		//Lipschidz();
+		Stokes();
 		end = std::chrono::system_clock::now();
 		std::chrono::duration<double> elapsed_seconds = end - start;
 		std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
