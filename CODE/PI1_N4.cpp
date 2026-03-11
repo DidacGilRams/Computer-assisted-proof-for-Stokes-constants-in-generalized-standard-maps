@@ -846,7 +846,7 @@ interval ESS(int dk0,IVector b,interval rho,interval gamma,int P)//Error for the
  
 void Stokes()//Computer assisted proof for the Stokes constant p_2^{-1}(d_{k_0})
 {
-	int dk0=2,P=10,L=1000;
+	int dk0=2,P=1000,L=1000;
 	interval rho=interval(8.215),gamma=interval(0.949327);
 	interval nu0=nu_0(dk0),fk0=interval(1.),err,varrho=rho+2*gamma;
 	IVector b(4),SS(2),b0(2);
