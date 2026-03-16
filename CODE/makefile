@@ -6,7 +6,7 @@
 SHELL := /bin/bash
 
 # ----- Project programs -----
-PROGS ?= PI1_N4 PI1_N5 PI2_3_N7 TI1_N4
+PROGS ?= PI1_N4 PI1_N5 PI2_3_N9 TI1_N4
 OTHERS ?=
 
 # ----- Toolchain -----

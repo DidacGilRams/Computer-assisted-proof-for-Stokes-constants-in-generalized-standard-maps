@@ -12,7 +12,7 @@ using namespace capd::matrixAlgorithms;
 //----------------------------------- Trigonometric case with one monomial (Section 5.5.1) ----------------------------------------------------------
 
 //This code gives an interval for the Stokes constant p_2^{-1}(d_{k_0}) for every degree d_{k_0} (has to be introduced in the Stokes() function).
-//This version uses a first approximation for phi_0 with 4 terms, that is, psi_0=psi_0^0+psi_0^1+psi_0^2+psi_0^3+psi_0^4
+//This version uses a first approximation for phi_0 with 5 terms, that is, psi_0=psi_0^0+psi_0^1+psi_0^2+psi_0^3+psi_0^4
 
 //<<<<<< Implementation of some functions used in the program >>>>>>
 
@@ -229,7 +229,9 @@ interval G(interval rho,interval gamma)// Bound of the second order inverse oper
 //Here for the trigonometric case kappa=0 and since we took psi00+psi01+psi02+psi03+psi04 as approximation nu_N=10
 {
 	interval x;
-	x=S(rho,gamma,interval(3));
+	x=power(1+4*power(rho,2),interval(0.5));
+	x=power((x+1)/(x-1),2);
+	x=x*S(rho,gamma,interval(3));
 	x=x*(S(rho,gamma,interval(9))+S(rho,gamma,interval(12)));
 	return x;
 }
@@ -317,7 +319,7 @@ interval A(int dk0,IVector b,interval rho)//Boundig the norm of the linear term 
 
 interval R(int dk0,IVector b,interval rho,interval M0)//Bounding higher order terms R^b (Lemma 5.2.11)
 {
-	return nu0(dk0)*dk0*exp(dk0*CN(dk0,b,0,rho))*(exp((dk0*M0)/power(rho,10))-interval(1.));//multiplied by rho^2 from the inverse G
+	return nu0(dk0)*dk0*exp(dk0*CN(dk0,b,0,rho))*(exp((dk0*M0)/power(rho,10))-interval(1.));
 }
 
 interval M0(int dk0,IVector b,interval rho,interval gamma)//Function M_0(rho,gamma)
@@ -798,7 +800,7 @@ interval ESS(int dk0,IVector b,interval rho,interval gamma,int P)//Error for the
 void Stokes()
 {
 	int dk0=1,P=20000,L=1000;
-	interval rho=interval(5.475),gamma=interval(0.949327),err,varrho,nu0;//
+	interval rho=interval(5.49),gamma=interval(0.949327),err,varrho,nu0;
 	IVector SS,b(4);
 	nu0=interval(2.)/interval(dk0);
 	varrho=interval(rho)+2*interval(gamma);

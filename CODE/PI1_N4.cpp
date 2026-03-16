@@ -12,7 +12,7 @@ using namespace capd::matrixAlgorithms;
 //----------------------------------- Polynomial case with one monomial (Section 5.5.2)----------------------------------------------------------
 
 //This code gives an interval for the Stokes constant p_2^{-1}(d_{k_0}) for every degree d_{k_0} (has to be introduced in the Stokes() function) when I={d_{k_0}}.
-//This version uses a first approximation for phi_0 with 4 terms, that is, psi_0=psi_0^0+psi_0^1+psi_0^2+psi_0^3+psi_0^4
+//This version uses a first approximation for phi_0 with 5 terms, that is, psi_0=psi_0^0+psi_0^1+psi_0^2+psi_0^3+psi_0^4
 
 //<<<<<< Implementation of some general functions used in the program >>>>>>
 
@@ -223,7 +223,9 @@ interval G(int dk0,interval rho,interval gamma)// Bound of the second order inve
 //Here for the polynomial case kappa=interval(2.)/(dk0-1) and nu_N=10+nu_0
 {
 	interval x;
-	x=S(rho,gamma,interval(3)+2*nu_0(dk0));
+	x=power(1+4*power(rho,2),interval(0.5));
+	x=power((x+1)/(x-1),nu_0(dk0)+2);
+	x=x*S(rho,gamma,interval(3)+2*nu_0(dk0));
 	x=x*(S(rho,gamma,interval(9))+S(rho,gamma,interval(12)+2*nu_0(dk0)));
 	return x;
 }
@@ -281,38 +283,38 @@ interval E0(int dk0,IVector b,interval rho)//The sum of E_N^n for all 0<=n<=N (L
 	interval nu0=nu_0(dk0);
 	interval psi00,psi01,psi02,psi03,psi04;
 	psi00=interval(1.)/power(rho-interval(1.),nu0)+interval(1.)/power(rho+interval(1.),nu0)-interval(2.)/power(rho,nu0);
-	psi00=psi00*power(rho,nu0+interval(10.));
+	psi00=psi00*power(rho,nu0+interval(12.));
 	for(int i=1;i<6;i++)
 	{
-		psi00=psi00-interval(2.)*binom(nu0+interval(2.)*i-interval(1.),2*i)*power(rho,10-(2*i));
+		psi00=psi00-interval(2.)*binom(nu0+interval(2.)*i-interval(1.),2*i)*power(rho,12-(2*i));
 	}
 	psi00=abs(psi00);
 	psi01=interval(1.)/power(rho-interval(1.),nu0+interval(2.))+interval(1.)/power(rho+interval(1.),nu0+interval(2.))-interval(2.)/power(rho,nu0+interval(2.));
-	psi01=psi01*power(rho,nu0+interval(10.));
+	psi01=psi01*power(rho,nu0+interval(12.));
 	for(int i=1;i<5;i++)
 	{
-		psi01=psi01-interval(2.)*binom(nu0+interval(2.)*(i+1)-interval(1.),2*i)*power(rho,10-2*(i+1));
+		psi01=psi01-interval(2.)*binom(nu0+interval(2.)*(i+1)-interval(1.),2*i)*power(rho,12-2*(i+1));
 	}
 	psi01=abs(b[0])*abs(psi01);
 	psi02=interval(1.)/power(rho-1,nu0+interval(4.))+interval(1.)/power(rho+1,nu0+interval(4.))-interval(2.)/power(rho,nu0+interval(4.));
-	psi02=psi02*power(rho,nu0+interval(10.));
+	psi02=psi02*power(rho,nu0+interval(12.));
 	for(int i=1;i<4;i++)
 	{
-		psi02=psi02-interval(2.)*binom(nu0+interval(2.)*(i+2)-interval(1.),2*i)*power(rho,10-2*(i+2));
+		psi02=psi02-interval(2.)*binom(nu0+interval(2.)*(i+2)-interval(1.),2*i)*power(rho,12-2*(i+2));
 	}
 	psi02=abs(b[1])*abs(psi02);
 	psi03=interval(1.)/power(rho-1,nu0+interval(6.))+interval(1.)/power(rho+1,nu0+interval(6.))-interval(2.)/power(rho,nu0+interval(6.));
-	psi03=psi03*power(rho,nu0+interval(10.));
+	psi03=psi03*power(rho,nu0+interval(12.));
 	for(int i=1;i<3;i++)
 	{
-		psi03=psi03-interval(2.)*binom(nu0+interval(2.)*(i+3)-interval(1.),2*i)*power(rho,10-2*(i+3));
+		psi03=psi03-interval(2.)*binom(nu0+interval(2.)*(i+3)-interval(1.),2*i)*power(rho,12-2*(i+3));
 	}
 	psi03=abs(b[2])*abs(psi03);
 	psi04=interval(1.)/power(rho-1,nu0+interval(8.))+interval(1.)/power(rho+1,nu0+interval(8.))-interval(2.)/power(rho,nu0+interval(8.));
-	psi04=psi04*power(rho,nu0+interval(10.));
+	psi04=psi04*power(rho,nu0+interval(12.));
 	for(int i=1;i<2;i++)
 	{
-		psi04=psi04-interval(2.)*binom(nu0+interval(2.)*(i+4)-interval(1.),2*i)*power(rho,10-2*(i+4));
+		psi04=psi04-interval(2.)*binom(nu0+interval(2.)*(i+4)-interval(1.),2*i)*power(rho,12-2*(i+4));
 	}
 	psi04=abs(b[3])*abs(psi04);
 	return psi00+psi01+psi02+psi03+psi04;
@@ -347,7 +349,7 @@ interval f0(int dk0,IVector b,interval rho)//The sum of F_N^k (Lemma 5.2.5)
 	{
 		x=x+binom(dk0,i)*power(psi00,dk0-i)*power(psi01+psi02+psi03+psi04,i);
 	}
-	return nu0*(nu0+1)*x*power(rho,nu0+interval(10.));
+	return nu0*(nu0+1)*x*power(rho,nu0+interval(12.));
 }
 
 interval F0(int dk0,IVector b,interval rho,interval gamma)//Computation of G*E_0^b (Corollaries 5.2.7 and 5.2.9)
@@ -374,7 +376,7 @@ interval R(int dk0,IVector b,interval rho,interval M0)//Bounding higher order te
 {
 	interval psi,nu0=nu_0(dk0);
 	psi=CN(dk0,b,0,rho);
-	return (nu0+2)*(nu0+1)*(power(1+psi+M0/power(rho,interval(10.)),dk0-1)-power(1+psi,dk0-1));//multiplied by rho^2 from the inverse G
+	return (nu0+2)*(nu0+1)*(power(1+psi+M0/power(rho,interval(10.)),dk0-1)-power(1+psi,dk0-1));
 }
 
 interval M0(int dk0,IVector b,interval rho,interval gamma)//Function M_0(rho,gamma)
@@ -846,8 +848,8 @@ interval ESS(int dk0,IVector b,interval rho,interval gamma,int P)//Error for the
  
 void Stokes()//Computer assisted proof for the Stokes constant p_2^{-1}(d_{k_0})
 {
-	int dk0=2,P=1000,L=1000;
-	interval rho=interval(8.215),gamma=interval(0.949327);
+	int dk0=3,P=10000,L=500;
+	interval rho=interval(6.),gamma=interval(0.949327);
 	interval nu0=nu_0(dk0),fk0=interval(1.),err,varrho=rho+2*gamma;
 	IVector b(4),SS(2),b0(2);
 	b[0]=b1(dk0);
@@ -879,8 +881,8 @@ void Stokes()//Computer assisted proof for the Stokes constant p_2^{-1}(d_{k_0})
 
 void Lipschidz()//This test can be used to find the minimal rho_0(d_{k_0}) (Section 5.2.3)
 {
-	int dk0=950;
-	interval rho=interval(4.),gamma=interval(0.949327);
+	int dk0=3;
+	interval rho=interval(6),gamma=interval(0.949327);
 	IVector b(4);
 	b[0]=b1(dk0);
 	b[1]=b2(dk0);
@@ -888,7 +890,7 @@ void Lipschidz()//This test can be used to find the minimal rho_0(d_{k_0}) (Sect
 	b[3]=b4(dk0);
 	for (int i=0;i<=10;i++)
 	{
-		rho=rho-interval(1.)/interval(100);
+		rho=rho-interval(1.)/interval(10);
 		cout << "dk0 = " << dk0 << " rho = " << rho << endl;
 		cout << "Lipschidz = " << Lip(dk0,b,rho,gamma) << " <=0.5 " << endl;//It has to be less than 0.5 to have existence of psi_1.
 	}
