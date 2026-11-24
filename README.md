@@ -1,5 +1,5 @@
 # Computer-assisted-proof-for-Stokes-constants-in-generalized-standard-maps
-Complementary code for the article "Stokes constants: a computer assisted proof" by Inma Baldomá, Maciej Capi\´nki, D. G.-R. and Pau Martín (also used in Section 5 of D. G.-R. doctoral thesis with title "Splitting of separatrices in generalized standard maps").
+Complementary code for the article "Stokes constants: a computer assisted proof" by Inma Baldomá, Maciej Capinski, D. G.-R. and Pau Martín (also used in Section 5 of D. G.-R. doctoral thesis with title "Splitting of separatrices in generalized standard maps").
 
 This project uses the CAPD::DynSys library.
 
